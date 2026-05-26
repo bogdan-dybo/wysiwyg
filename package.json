@@ -1,0 +1,72 @@
+{
+  "name": "@bogdan-dybo/wysiwyg",
+  "version": "1.0.0",
+  "description": "Lightweight WYSIWYG editor — zero dependencies, Vue 3 component included",
+  "author": "Bogdan <mortecibogdan@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "wysiwyg",
+    "editor",
+    "rich-text",
+    "vue",
+    "vue3",
+    "inertia",
+    "tailwind"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bogdan-dybo/wysiwyg.git"
+  },
+  "homepage": "https://github.com/bogdan-dybo/wysiwyg#readme",
+  "bugs": {
+    "url": "https://github.com/bogdan-dybo/wysiwyg/issues"
+  },
+
+  "type": "module",
+
+  "main":   "./dist/wysiwyg.umd.js",
+  "module": "./dist/wysiwyg.esm.js",
+  "types":  "./dist/wysiwyg.d.ts",
+
+  "exports": {
+    ".": {
+      "import":  "./dist/wysiwyg.esm.js",
+      "require": "./dist/wysiwyg.umd.js",
+      "types":   "./dist/wysiwyg.d.ts"
+    },
+    "./vue": {
+      "import": "./dist/WysiwygEditor.vue",
+      "types":  "./dist/WysiwygEditor.vue.d.ts"
+    },
+    "./css": "./dist/wysiwyg.css"
+  },
+
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+
+  "sideEffects": ["*.css"],
+
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
+
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "vite": "^5.0.0",
+    "vue": "^3.4.0"
+  },
+
+  "scripts": {
+    "build":   "vite build",
+    "prepare": "npm run build",
+    "pub":     "npm run build && npm publish --access public"
+  }
+}

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WysiwygEditor — Demo</title>
+  <link rel="stylesheet" href="wysiwyg.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #1f2937;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      margin-top: 6px;
+      font-size: 15px;
+      color: #6b7280;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin-right: 5px;
+    }
+
+    .badge-blue  { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 24px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #9ca3af;
+      margin-bottom: 14px;
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .action-btn {
+      padding: 8px 18px;
+      border-radius: 7px;
+      border: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .action-btn:active { transform: scale(0.97); }
+
+    .btn-primary   { background: #3b82f6; color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+
+    .btn-secondary { background: #f1f5f9; color: #374151; border: 1.5px solid #e2e8f0; }
+    .btn-secondary:hover { background: #e5eaf1; }
+
+    .btn-danger    { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
+
+    /* HTML output preview */
+    #html-preview {
+      width: 100%;
+      min-height: 120px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 12px 14px;
+      border-radius: 7px;
+      background: #0f172a;
+      color: #7dd3fc;
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1.5px solid #1e293b;
+    }
+
+    /* Feature chips */
+    .feature-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .feature-chip {
+      padding: 4px 12px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 99px;
+      font-size: 12.5px;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>WysiwygEditor</h1>
+    <p>
+      <span class="badge badge-blue">v1.0.0</span>
+      <span class="badge badge-green">Zero dependencies</span>
+      Librărie JS WYSIWYG de la zero
+    </p>
+  </div>
+
+  <!-- Editor card -->
+  <div class="card">
+    <div class="card-title">Editor</div>
+    <div id="my-editor"></div>
+
+    <div class="actions">
+      <button class="action-btn btn-primary" onclick="showOutput()">Afișează HTML</button>
+      <button class="action-btn btn-secondary" onclick="loadSample()">Încarcă conținut demo</button>
+      <button class="action-btn btn-secondary" onclick="editor.focus()">Focus</button>
+      <button class="action-btn btn-danger" onclick="editor.clear()">Șterge tot</button>
+    </div>
+  </div>
+
+  <!-- HTML Output card -->
+  <div class="card">
+    <div class="card-title">Output HTML (live)</div>
+    <pre id="html-preview">— apasă „Afișează HTML" sau începe să editezi —</pre>
+  </div>
+
+  <!-- API card -->
+  <div class="card">
+    <div class="card-title">API rapid</div>
+    <div class="feature-list">
+      <span class="feature-chip">editor.getHTML()</span>
+      <span class="feature-chip">editor.setHTML(html)</span>
+      <span class="feature-chip">editor.getText()</span>
+      <span class="feature-chip">editor.clear()</span>
+      <span class="feature-chip">editor.focus()</span>
+      <span class="feature-chip">editor.destroy()</span>
+      <span class="feature-chip">editor.on('change', fn)</span>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script src="wysiwyg.js"></script>
+<script>
+  /* ---- Init ---- */
+  const editor = new WysiwygEditor('#my-editor', {
+    height: 320,
+    placeholder: 'Începe să tastezi ceva…',
+    onChange: function(html) {
+      // Live update the preview
+      document.getElementById('html-preview').textContent = html || '(gol)';
+    }
+  });
+
+  /* ---- Helpers ---- */
+  function showOutput() {
+    document.getElementById('html-preview').textContent = editor.getHTML() || '(editorul este gol)';
+  }
+
+  function loadSample() {
+    editor.setHTML(`
+      <h1>Bun venit în WysiwygEditor 👋</h1>
+      <p>Acesta este un editor WYSIWYG scris <strong>de la zero</strong>, fără nicio dependență externă.</p>
+      <h2>Funcționalități incluse</h2>
+      <ul>
+        <li><strong>Bold</strong>, <em>Italic</em>, <u>Underline</u>, <s>Strikethrough</s></li>
+        <li>Headings H1 / H2 / H3</li>
+        <li>Liste bullet și numerotate</li>
+        <li>Aliniere text (stânga, centru, dreapta, justify)</li>
+        <li><span style="color:#2563eb;">Culoare text</span> cu paletă de 32 culori + custom</li>
+        <li>Tabele cu grid picker (hover pentru dimensiune)</li>
+        <li>Undo / Redo nativ</li>
+      </ul>
+      <h3>Exemplu tabel</h3>
+      <table><tbody>
+        <tr><th>Produs</th><th>Preț</th><th>Stoc</th></tr>
+        <tr><td>Widget A</td><td>49 lei</td><td>120</td></tr>
+        <tr><td>Widget B</td><td>79 lei</td><td>45</td></tr>
+      </tbody></table>
+      <p>Apasă <strong>Tab</strong> în interiorul unui tabel pentru a naviga între celule.<br>
+      La ultima celulă, Tab adaugă automat un rând nou.</p>
+    `);
+  }
+
+  // Load sample on start
+  loadSample();
+</script>
+</body>
+</html>

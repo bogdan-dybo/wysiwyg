@@ -1,0 +1,425 @@
+/* ============================================================
+   WysiwygEditor — stylesheet
+   v1.0.0 | zero dependencies
+   ============================================================ */
+
+/* ---- Wrapper ---- */
+.wysiwyg-wrapper {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.18s, box-shadow 0.18s;
+  overflow: visible;
+  position: relative;
+}
+
+.wysiwyg-wrapper.wysiwyg-focused {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+/* ---- Toolbar ---- */
+.wysiwyg-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 10px;
+  border-bottom: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 10px 10px 0 0;
+  user-select: none;
+  position: relative;
+}
+
+.wysiwyg-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.wysiwyg-divider {
+  width: 1px;
+  height: 22px;
+  background: #e2e8f0;
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+/* ---- Toolbar Buttons ---- */
+.wysiwyg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4b5563;
+  transition: background 0.13s, color 0.13s;
+  position: relative;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.wysiwyg-btn:hover {
+  background: #e9eef5;
+  color: #111827;
+}
+
+.wysiwyg-btn:active {
+  background: #dde4ef;
+}
+
+.wysiwyg-btn.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.wysiwyg-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Heading dropdown trigger */
+.wysiwyg-heading-btn {
+  width: auto;
+  min-width: 98px;
+  padding: 0 8px 0 10px;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  justify-content: space-between;
+  color: #374151;
+}
+
+.wysiwyg-heading-btn .wysiwyg-heading-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Color button */
+.wysiwyg-color-btn {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wysiwyg-color-swatch {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: #000000;
+  pointer-events: none;
+}
+
+/* ---- Dropdowns ---- */
+.wysiwyg-dropdown-wrap {
+  position: relative;
+}
+
+.wysiwyg-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.11), 0 2px 6px rgba(0, 0, 0, 0.07);
+  z-index: 9999;
+  min-width: 150px;
+  overflow: hidden;
+  animation: wysiwyg-dropdown-in 0.12s ease;
+}
+
+@keyframes wysiwyg-dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Heading items */
+.wysiwyg-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: #374151;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+
+.wysiwyg-dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.wysiwyg-dropdown-item.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.wysiwyg-dropdown-item[data-tag="P"]  { font-size: 13.5px; }
+.wysiwyg-dropdown-item[data-tag="H1"] { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.wysiwyg-dropdown-item[data-tag="H2"] { font-size: 17px; font-weight: 700; }
+.wysiwyg-dropdown-item[data-tag="H3"] { font-size: 14.5px; font-weight: 700; }
+
+/* ---- Color Palette ---- */
+.wysiwyg-color-palette {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(8, 24px);
+  gap: 3px;
+  min-width: 0;
+}
+
+.wysiwyg-color-cell {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  flex-shrink: 0;
+}
+
+.wysiwyg-color-cell:hover {
+  transform: scale(1.22);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.wysiwyg-color-cell.selected {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.wysiwyg-color-custom {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.wysiwyg-color-custom input[type="color"] {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+  flex-shrink: 0;
+}
+
+/* ---- Table Picker ---- */
+.wysiwyg-table-picker {
+  padding: 10px;
+}
+
+.wysiwyg-table-picker-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 7px;
+  font-weight: 500;
+  height: 16px;
+}
+
+.wysiwyg-table-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 22px);
+  gap: 2px;
+}
+
+.wysiwyg-table-cell-pick {
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #f9fafb;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.wysiwyg-table-cell-pick.highlighted {
+  background: #dbeafe;
+  border-color: #60a5fa;
+}
+
+/* ---- Editor Area ---- */
+.wysiwyg-editor {
+  flex: 1;
+  padding: 18px 22px;
+  outline: none;
+  line-height: 1.75;
+  color: #1f2937;
+  font-size: 15px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-y: auto;
+  word-wrap: break-word;
+  min-height: 200px;
+  caret-color: #3b82f6;
+}
+
+.wysiwyg-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  display: block;
+}
+
+/* Editor typography */
+.wysiwyg-editor p {
+  margin: 0.35em 0;
+}
+
+.wysiwyg-editor h1 {
+  font-size: 2em;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0.6em 0 0.3em;
+  color: #111827;
+}
+
+.wysiwyg-editor h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.5em 0 0.3em;
+  color: #111827;
+}
+
+.wysiwyg-editor h3 {
+  font-size: 1.2em;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0.5em 0 0.25em;
+  color: #111827;
+}
+
+.wysiwyg-editor ul,
+.wysiwyg-editor ol {
+  padding-left: 1.6em;
+  margin: 0.4em 0;
+}
+
+.wysiwyg-editor ul {
+  list-style: disc;
+}
+
+.wysiwyg-editor ul ul {
+  list-style: circle;
+}
+
+.wysiwyg-editor ul ul ul {
+  list-style: square;
+}
+
+.wysiwyg-editor ol {
+  list-style: decimal;
+}
+
+.wysiwyg-editor ol ol {
+  list-style: lower-alpha;
+}
+
+.wysiwyg-editor li {
+  margin: 0.2em 0;
+}
+
+.wysiwyg-editor a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.wysiwyg-editor blockquote {
+  border-left: 3px solid #e2e8f0;
+  padding-left: 14px;
+  margin: 0.5em 0;
+  color: #6b7280;
+}
+
+/* Tables inside editor */
+.wysiwyg-editor table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.wysiwyg-editor table td,
+.wysiwyg-editor table th {
+  border: 1.5px solid #d1d5db;
+  padding: 7px 11px;
+  vertical-align: top;
+  min-width: 40px;
+  outline: none;
+}
+
+.wysiwyg-editor table td:focus,
+.wysiwyg-editor table th:focus {
+  background: #eff6ff;
+}
+
+.wysiwyg-editor table th {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ---- Source View ---- */
+.wysiwyg-source {
+  flex: 1;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #0f172a;
+  background: #f8fafc;
+  caret-color: #3b82f6;
+  border-top: 1.5px solid #e2e8f0;
+}
+
+.wysiwyg-source:focus {
+  background: #fff;
+}
+
+/* ---- Status Bar ---- */
+.wysiwyg-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 14px;
+  border-top: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 0 10px 10px;
+}
+
+.wysiwyg-wordcount {
+  font-size: 11.5px;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+}
