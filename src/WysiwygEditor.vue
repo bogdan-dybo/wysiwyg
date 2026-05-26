@@ -4,18 +4,16 @@
 
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import WysiwygEditorCore from './wysiwyg.js'
 
 /**
- * WysiwygEditor Vue 3 component
- *
- * Requires wysiwyg.js and wysiwyg.css to be available globally.
- * Add to your layout / app entry:
- *   import '/path/to/wysiwyg.css'
- *   import '/path/to/wysiwyg.js'
+ * @bogdan-dybo/wysiwyg — Vue 3 component
  *
  * Usage:
+ *   import { WysiwygEditor } from '@bogdan-dybo/wysiwyg'
+ *   import '@bogdan-dybo/wysiwyg/css'
+ *
  *   <WysiwygEditor v-model="form.content" />
- *   <WysiwygEditor v-model="form.content" :height="500" placeholder="Scrie ceva..." />
  */
 
 // ---- Props ----------------------------------------------------------------
@@ -36,7 +34,7 @@ const props = defineProps({
     type: String,
     default: 'Start typing...',
   },
-  /** Disable the editor */
+  /** Disables editing and grays out the toolbar */
   disabled: {
     type: Boolean,
     default: false,
@@ -46,13 +44,9 @@ const props = defineProps({
 // ---- Emits ----------------------------------------------------------------
 
 const emit = defineEmits([
-  /** v-model update */
   'update:modelValue',
-  /** Emitted on every content change, payload: html string */
   'change',
-  /** Emitted when editor receives focus */
   'focus',
-  /** Emitted when editor loses focus */
   'blur',
 ])
 
@@ -60,18 +54,13 @@ const emit = defineEmits([
 
 const containerRef = ref(null)
 
-/** @type {import('./wysiwyg.js').WysiwygEditor | null} */
+/** @type {WysiwygEditorCore | null} */
 let editor = null
 
 // ---- Lifecycle ------------------------------------------------------------
 
 onMounted(() => {
-  if (!window.WysiwygEditor) {
-    console.error('[WysiwygEditor.vue] window.WysiwygEditor not found. Make sure wysiwyg.js is loaded before this component.')
-    return
-  }
-
-  editor = new window.WysiwygEditor(containerRef.value, {
+  editor = new WysiwygEditorCore(containerRef.value, {
     height:      props.height,
     placeholder: props.placeholder,
     onChange(html) {
@@ -80,17 +69,15 @@ onMounted(() => {
     },
   })
 
-  // Set initial value
   if (props.modelValue) {
     editor.setHTML(props.modelValue)
   }
 
-  // Disable if needed
   if (props.disabled) {
     _setDisabled(true)
   }
 
-  // Forward focus / blur events from the inner editor div
+  // Forward focus / blur from the inner contenteditable div
   const inner = containerRef.value?.querySelector('.wysiwyg-editor')
   if (inner) {
     inner.addEventListener('focus', () => emit('focus'))
@@ -105,14 +92,10 @@ onBeforeUnmount(() => {
 
 // ---- Watchers -------------------------------------------------------------
 
-/**
- * Sync external v-model changes into the editor.
- * Guards against echo loops (editor fires onChange → parent updates
- * modelValue → watcher fires → setHTML → onChange again).
- */
 watch(
   () => props.modelValue,
   (newVal) => {
+    // Guard against echo loop: editor → onChange → v-model → watcher → setHTML → onChange
     if (editor && editor.getHTML() !== newVal) {
       editor.setHTML(newVal ?? '')
     }
@@ -133,20 +116,13 @@ function _setDisabled(disabled) {
   }
   const toolbar = containerRef.value?.querySelector('.wysiwyg-toolbar')
   if (toolbar) {
-    toolbar.style.opacity        = disabled ? '0.5' : ''
-    toolbar.style.pointerEvents  = disabled ? 'none' : ''
+    toolbar.style.opacity       = disabled ? '0.5' : ''
+    toolbar.style.pointerEvents = disabled ? 'none' : ''
   }
 }
 
 // ---- Exposed API ----------------------------------------------------------
 
-/**
- * Expose editor methods so parent components can call them via template ref:
- *   const editorRef = ref(null)
- *   editorRef.value.focus()
- *   editorRef.value.clear()
- *   editorRef.value.getHTML()
- */
 defineExpose({
   focus:   () => editor?.focus(),
   clear:   () => editor?.clear(),

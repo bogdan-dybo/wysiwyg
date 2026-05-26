@@ -65,8 +65,9 @@
   },
 
   "scripts": {
-    "build":   "vite build",
-    "prepare": "npm run build",
-    "pub":     "npm run build && npm publish --access public"
+    "build":     "vite build",
+    "postbuild": "cp src/wysiwyg.css dist/wysiwyg.css",
+    "prepare":   "npm run build",
+    "pub":       "npm run build && npm publish --access public"
   }
 }

@@ -10,7 +10,7 @@ export default defineConfig({
       entry:    resolve(__dirname, 'src/index.js'),
       name:     'DyboWysiwyg',
       formats:  ['es', 'umd'],
-      fileName: (format) => `wysiwyg.${format}.js`,
+      fileName: (format) => format === 'es' ? 'wysiwyg.esm.js' : `wysiwyg.${format}.js`,
     },
 
     rollupOptions: {
