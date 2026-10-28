@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WysiwygEditor — Demo</title>
-  <link rel="stylesheet" href="wysiwyg.css" />
+  <link rel="stylesheet" href="dist/wysiwyg.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -185,10 +185,11 @@
 
 </div><!-- /page -->
 
-<script src="wysiwyg.js"></script>
+<!-- Rulează `npm run build` înainte de a deschide demo-ul -->
+<script src="dist/wysiwyg.umd.js"></script>
 <script>
   /* ---- Init ---- */
-  const editor = new WysiwygEditor('#my-editor', {
+  const editor = new DyboWysiwyg.WysiwygEditorCore('#my-editor', {
     height: 320,
     placeholder: 'Începe să tastezi ceva…',
     onChange: function(html) {

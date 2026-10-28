@@ -30,13 +30,9 @@
 
   "exports": {
     ".": {
+      "types":   "./dist/wysiwyg.d.ts",
       "import":  "./dist/wysiwyg.esm.js",
-      "require": "./dist/wysiwyg.umd.js",
-      "types":   "./dist/wysiwyg.d.ts"
-    },
-    "./vue": {
-      "import": "./dist/WysiwygEditor.vue",
-      "types":  "./dist/WysiwygEditor.vue.d.ts"
+      "require": "./dist/wysiwyg.umd.js"
     },
     "./css": "./dist/wysiwyg.css"
   },
@@ -66,7 +62,7 @@
 
   "scripts": {
     "build":     "vite build",
-    "postbuild": "cp src/wysiwyg.css dist/wysiwyg.css",
+    "postbuild": "cp src/wysiwyg.css src/wysiwyg.d.ts dist/",
     "prepare":   "npm run build",
     "pub":       "npm run build && npm publish --access public"
   }

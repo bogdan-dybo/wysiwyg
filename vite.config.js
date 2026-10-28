@@ -27,8 +27,8 @@ export default defineConfig({
       },
     },
 
-    // Păstrăm .vue-ul ca fișier separat în dist/
-    // astfel încât importul `@dybo/wysiwyg/vue` să funcționeze
+    // Componenta Vue e inclusă în bundle (export `WysiwygEditor`);
+    // CSS-ul și wysiwyg.d.ts sunt copiate în dist/ de scriptul `postbuild`
     copyPublicDir: false,
   },
 })

@@ -9,7 +9,7 @@ Lightweight WYSIWYG editor — zero dependencies, Vue 3 component included.
 npm i @bogdan-dybo/wysiwyg
 
 # directly from GitHub
-npm i dybo/wysiwyg
+npm i bogdan-dybo/wysiwyg
 ```
 
 ## Setup
@@ -95,6 +95,7 @@ editorRef.value.setHTML('<p>Hello</p>')
   editor.getText()           // → plain text
   editor.focus()
   editor.clear()
+  editor.setDisabled(true)  // read-only, grays out the toolbar
   editor.destroy()
 
   // Event API
@@ -114,6 +115,7 @@ editorRef.value.setHTML('<p>Hello</p>')
 | Text color          | 32-color palette + custom color picker     |
 | Alignment           | Left, Center, Right, Justify               |
 | Lists               | Bullet and ordered, nested                 |
+| Links               | Insert / edit / remove, new tab — Ctrl+K   |
 | Tables              | Grid picker (up to 8×8), Tab navigation    |
 | Remove formatting   | Clears all inline styles                   |
 | View Source         | Toggle raw HTML editing                    |

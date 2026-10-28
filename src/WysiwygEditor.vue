@@ -1,5 +1,12 @@
 <template>
-  <div ref="containerRef"></div>
+  <!--
+    The core moves its target inside the .wysiwyg-wrapper it creates, so the
+    target must not be the component root — otherwise the editor ends up
+    outside the component's DOM.
+  -->
+  <div>
+    <div ref="targetRef"></div>
+  </div>
 </template>
 
 <script setup>
@@ -52,7 +59,7 @@ const emit = defineEmits([
 
 // ---- Internal state -------------------------------------------------------
 
-const containerRef = ref(null)
+const targetRef = ref(null)
 
 /** @type {WysiwygEditorCore | null} */
 let editor = null
@@ -60,7 +67,7 @@ let editor = null
 // ---- Lifecycle ------------------------------------------------------------
 
 onMounted(() => {
-  editor = new WysiwygEditorCore(containerRef.value, {
+  editor = new WysiwygEditorCore(targetRef.value, {
     height:      props.height,
     placeholder: props.placeholder,
     onChange(html) {
@@ -74,15 +81,11 @@ onMounted(() => {
   }
 
   if (props.disabled) {
-    _setDisabled(true)
+    editor.setDisabled(true)
   }
 
-  // Forward focus / blur from the inner contenteditable div
-  const inner = containerRef.value?.querySelector('.wysiwyg-editor')
-  if (inner) {
-    inner.addEventListener('focus', () => emit('focus'))
-    inner.addEventListener('blur',  () => emit('blur'))
-  }
+  editor.on('focus', () => emit('focus'))
+  editor.on('blur',  () => emit('blur'))
 })
 
 onBeforeUnmount(() => {
@@ -104,22 +107,8 @@ watch(
 
 watch(
   () => props.disabled,
-  (val) => _setDisabled(val),
+  (val) => editor?.setDisabled(val),
 )
-
-// ---- Helpers --------------------------------------------------------------
-
-function _setDisabled(disabled) {
-  const inner = containerRef.value?.querySelector('.wysiwyg-editor')
-  if (inner) {
-    inner.contentEditable = disabled ? 'false' : 'true'
-  }
-  const toolbar = containerRef.value?.querySelector('.wysiwyg-toolbar')
-  if (toolbar) {
-    toolbar.style.opacity       = disabled ? '0.5' : ''
-    toolbar.style.pointerEvents = disabled ? 'none' : ''
-  }
-}
 
 // ---- Exposed API ----------------------------------------------------------
 

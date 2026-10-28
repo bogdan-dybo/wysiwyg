@@ -37,6 +37,8 @@ const ICONS = {
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4" stroke-linecap="round"/><path d="M4 10h2" stroke-linecap="round"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke-linecap="round"/></svg>',
   table:
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>',
+  link:
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
   removeFormat:
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/><line x1="3" y1="3" x2="21" y2="21"/></svg>',
   chevronDown:
@@ -54,6 +56,115 @@ const COLORS = [
   '#fde8e8', '#fef3e2', '#fefce8', '#ecfdf5', '#e0f7f4', '#e3f2fd', '#f3e8ff', '#fce7f3',
   '#7f1d1d', '#78350f', '#713f12', '#14532d', '#134e4a', '#1e3a5f', '#3b0764', '#500724',
 ];
+
+/* ============================================================
+   Paste sanitizing
+   ============================================================ */
+// Tags removed together with their content
+const PASTE_DROP_TAGS = new Set([
+  'SCRIPT', 'STYLE', 'META', 'LINK', 'TITLE', 'HEAD', 'NOSCRIPT', 'TEMPLATE',
+  'IFRAME', 'FRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH',
+  'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT',
+]);
+
+// Tags kept as-is; anything else is unwrapped (children kept)
+const PASTE_ALLOWED_TAGS = new Set([
+  'P', 'BR', 'DIV', 'SPAN', 'FONT', 'HR',
+  'B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'SUB', 'SUP',
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE', 'CODE',
+  'UL', 'OL', 'LI', 'A', 'IMG',
+  'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD',
+]);
+
+const PASTE_ALLOWED_STYLES = [
+  'color', 'background-color', 'text-align', 'font-weight', 'font-style', 'text-decoration',
+];
+
+const SAFE_HREF = /^(https?:|mailto:|tel:|#|\/)/i;
+const SAFE_SRC  = /^(https?:|data:image\/(png|jpe?g|gif|webp);)/i;
+
+function sanitizeHTML(html) {
+  const tpl = document.createElement('template'); // inert: no scripts run, no images load
+  tpl.innerHTML = html;
+  cleanChildren(tpl.content);
+  return tpl.innerHTML;
+}
+
+function cleanChildren(parent) {
+  Array.from(parent.childNodes).forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) return;
+    if (node.nodeType !== Node.ELEMENT_NODE) { node.remove(); return; } // comments etc.
+
+    const tag = node.tagName.toUpperCase();
+    if (PASTE_DROP_TAGS.has(tag)) { node.remove(); return; }
+
+    cleanChildren(node);
+
+    if (!PASTE_ALLOWED_TAGS.has(tag)) { node.replaceWith(...node.childNodes); return; }
+
+    cleanAttributes(node, tag);
+
+    // Word / Docs leave lots of empty <span>s behind once their styles are stripped
+    if ((tag === 'SPAN' || tag === 'FONT') && !node.attributes.length) {
+      node.replaceWith(...node.childNodes);
+    }
+  });
+}
+
+function cleanAttributes(node, tag) {
+  Array.from(node.attributes).forEach(({ name, value }) => {
+    if (name === 'style') {
+      const kept = PASTE_ALLOWED_STYLES
+        .filter(prop => node.style.getPropertyValue(prop))
+        .map(prop => prop + ': ' + node.style.getPropertyValue(prop));
+      if (kept.length) node.setAttribute('style', kept.join('; '));
+      else node.removeAttribute('style');
+      return;
+    }
+
+    const v = value.trim();
+    const keep =
+      (name === 'href'  && tag === 'A'   && SAFE_HREF.test(v)) ||
+      (name === 'src'   && tag === 'IMG' && SAFE_SRC.test(v))  ||
+      (name === 'alt'   && tag === 'IMG') ||
+      (name === 'color' && tag === 'FONT') ||
+      ((name === 'colspan' || name === 'rowspan') && (tag === 'TD' || tag === 'TH'));
+
+    if (!keep) node.removeAttribute(name);
+  });
+}
+
+function escapeHTML(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Turns user input into a safe href, or null if it can't be one.
+ * "example.com" → "https://example.com", "a@b.ro" → "mailto:a@b.ro",
+ * "javascript:…" / "data:…" → null
+ */
+function normalizeUrl(raw) {
+  const v = raw.trim();
+  if (!v) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return SAFE_HREF.test(v) ? v : null;
+  if (v[0] === '#' || v[0] === '/') return v;
+  if (/^[^\s/@]+@[^\s/@]+\.[^\s/@]+$/.test(v)) return 'mailto:' + v;
+  return 'https://' + v;
+}
+
+function setLinkTarget(a, newTab) {
+  if (newTab) {
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+  } else {
+    a.removeAttribute('target');
+    a.removeAttribute('rel');
+  }
+}
 
 /* ============================================================
    Helpers
@@ -99,6 +210,7 @@ class WysiwygEditor {
     this._listeners      = {};
     this._activeDropdown = null;
     this._isSourceMode   = false;
+    this._disabled       = false;
 
     this._build();
   }
@@ -190,8 +302,8 @@ class WysiwygEditor {
         this._btn('bulletList',  'Bullet List',  () => this._exec('insertUnorderedList'), 'insertunorderedlist', true),
         this._btn('orderedList', 'Ordered List', () => this._exec('insertOrderedList'),   'insertorderedlist',   true),
       ],
-      /* Table */
-      [this._buildTableDropdown()],
+      /* Link + Table */
+      [this._buildLinkDropdown(), this._buildTableDropdown()],
       /* Clear + Source */
       [
         this._btn('removeFormat', 'Remove Formatting', () => this._exec('removeFormat')),
@@ -403,6 +515,58 @@ class WysiwygEditor {
     return wrap;
   }
 
+  /** Link form dropdown (URL, optional text, new tab) */
+  _buildLinkDropdown() {
+    const wrap = el('div', { className: 'wysiwyg-dropdown-wrap' });
+
+    this._linkBtn = this._btn('link', 'Insert Link (Ctrl+K)', () => this._openLinkForm());
+
+    const dd   = el('div', { className: 'wysiwyg-dropdown', style: 'display:none' });
+    const form = el('div', { className: 'wysiwyg-link-form' });
+
+    const url  = el('input', { type: 'text', className: 'wysiwyg-link-input', placeholder: 'https://…' });
+    const text = el('input', { type: 'text', className: 'wysiwyg-link-input', placeholder: 'Link text (optional)' });
+
+    const newTabRow = el('label', { className: 'wysiwyg-link-newtab' });
+    const newTab    = el('input', { type: 'checkbox' });
+    newTabRow.appendChild(newTab);
+    newTabRow.appendChild(el('span', { textContent: 'Open in new tab' }));
+
+    const actions = el('div', { className: 'wysiwyg-link-actions' });
+    const remove  = el('button', { type: 'button', className: 'wysiwyg-link-remove', textContent: 'Remove' });
+    const apply   = el('button', { type: 'button', className: 'wysiwyg-link-apply',  textContent: 'Apply' });
+    actions.appendChild(remove);
+    actions.appendChild(apply);
+
+    [url, text].forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this._applyLink();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          this._closeDropdowns();
+          this._restoreLinkRange();
+        }
+      });
+    });
+    url.addEventListener('input', () => url.classList.remove('invalid'));
+    apply.addEventListener('click',  () => this._applyLink());
+    remove.addEventListener('click', () => this._removeLink());
+
+    form.appendChild(url);
+    form.appendChild(text);
+    form.appendChild(newTabRow);
+    form.appendChild(actions);
+    dd.appendChild(form);
+
+    this._link = { dd, url, text, newTab, remove };
+
+    wrap.appendChild(this._linkBtn);
+    wrap.appendChild(dd);
+    return wrap;
+  }
+
   /* ----------------------------------------------------------
      EVENTS
      ---------------------------------------------------------- */
@@ -414,31 +578,51 @@ class WysiwygEditor {
       this._syncTarget();
       this._updateWordCount();
       this._updateState();
-      this._emit('change', this.getHTML());
-      if (this._opts.onChange) this._opts.onChange(this.getHTML());
+      this._notifyChange();
+    });
+
+    // Keep form value / v-model in sync while editing raw HTML too
+    this._sourceEl.addEventListener('input', () => {
+      this._syncTarget();
+      this._notifyChange();
     });
 
     editor.addEventListener('keyup',   () => this._updateState());
     editor.addEventListener('mouseup', () => this._updateState());
 
-    editor.addEventListener('focus', () => this._wrapper.classList.add('wysiwyg-focused'));
-    editor.addEventListener('blur',  () => this._wrapper.classList.remove('wysiwyg-focused'));
+    editor.addEventListener('focus', () => {
+      this._wrapper.classList.add('wysiwyg-focused');
+      this._emit('focus');
+    });
+    editor.addEventListener('blur', () => {
+      this._wrapper.classList.remove('wysiwyg-focused');
+      this._emit('blur');
+    });
 
     editor.addEventListener('keydown', (e) => this._onKeydown(e));
 
-    document.addEventListener('mousedown', (e) => {
+    // Stored so destroy() can remove it
+    this._onDocumentMousedown = (e) => {
       if (!this._wrapper.contains(e.target)) this._closeDropdowns();
-    });
+    };
+    document.addEventListener('mousedown', this._onDocumentMousedown);
 
     editor.addEventListener('paste', (e) => {
       e.preventDefault();
       const html = e.clipboardData.getData('text/html');
       const text = e.clipboardData.getData('text/plain');
-      document.execCommand('insertHTML', false, html || text.replace(/\n/g, '<br>'));
+      document.execCommand('insertHTML', false,
+        html ? sanitizeHTML(html) : escapeHTML(text).replace(/\n/g, '<br>'));
     });
   }
 
   _onKeydown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      this._openLinkForm();
+      return;
+    }
+
     const cell = this._currentTableCell();
 
     if (e.key === 'Tab') {
@@ -476,8 +660,98 @@ class WysiwygEditor {
     document.execCommand(cmd, false, value !== undefined ? value : null);
     this._updateState();
     this._syncTarget();
-    this._emit('change', this.getHTML());
-    if (this._opts.onChange) this._opts.onChange(this.getHTML());
+    this._notifyChange();
+  }
+
+  _openLinkForm() {
+    const { dd, url, text, newTab, remove } = this._link;
+
+    if (dd.style.display !== 'none') {
+      this._closeDropdowns();
+      return;
+    }
+
+    // Focus moves to the form inputs, so remember where the selection was
+    const sel = window.getSelection();
+    this._linkRange = sel && sel.rangeCount && this._editor.contains(sel.getRangeAt(0).commonAncestorContainer)
+      ? sel.getRangeAt(0).cloneRange()
+      : null;
+    this._editingLink = this._closestInEditor('A');
+
+    const a = this._editingLink;
+    url.value        = a ? a.getAttribute('href') || '' : '';
+    newTab.checked   = !!a && a.target === '_blank';
+    text.value       = '';
+    // Text field only makes sense when there is nothing selected to wrap
+    text.style.display   = !a && (!this._linkRange || this._linkRange.collapsed) ? '' : 'none';
+    remove.style.display = a ? '' : 'none';
+    url.classList.remove('invalid');
+
+    this._toggleDropdown(dd);
+    url.focus();
+    url.select();
+  }
+
+  _applyLink() {
+    const { url, text, newTab } = this._link;
+    const href = normalizeUrl(url.value);
+    if (!href) {
+      url.classList.add('invalid');
+      url.focus();
+      return;
+    }
+
+    this._closeDropdowns();
+    this._restoreLinkRange();
+
+    if (this._editingLink) {
+      this._editingLink.setAttribute('href', href);
+      setLinkTarget(this._editingLink, newTab.checked);
+    } else if (!this._linkRange || this._linkRange.collapsed) {
+      const attrs = newTab.checked ? ' target="_blank" rel="noopener noreferrer"' : '';
+      const label = text.value.trim() || url.value.trim();
+      document.execCommand('insertHTML', false,
+        '<a href="' + escapeHTML(href) + '"' + attrs + '>' + escapeHTML(label) + '</a>');
+    } else {
+      document.execCommand('createLink', false, href);
+      const sel = window.getSelection();
+      this._editor.querySelectorAll('a').forEach(a => {
+        if (a.getAttribute('href') === href && sel.containsNode(a, true)) {
+          setLinkTarget(a, newTab.checked);
+        }
+      });
+    }
+
+    this._updateState();
+    this._syncTarget();
+    this._notifyChange();
+  }
+
+  _removeLink() {
+    const a = this._editingLink;
+    this._closeDropdowns();
+    if (!a) return;
+    this._editor.focus();
+    const range = document.createRange();
+    range.selectNodeContents(a);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    this._exec('unlink');
+  }
+
+  _restoreLinkRange() {
+    this._editor.focus();
+    if (!this._linkRange) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(this._linkRange);
+  }
+
+  _notifyChange() {
+    const html = this.getHTML();
+    this._emit('change', html);
+    if (this._opts.onChange) this._opts.onChange(html);
   }
 
   _applyColor(color) {
@@ -521,8 +795,7 @@ class WysiwygEditor {
     if (firstCell) this._selectNodeContents(firstCell);
 
     this._syncTarget();
-    this._emit('change', this.getHTML());
-    if (this._opts.onChange) this._opts.onChange(this.getHTML());
+    this._notifyChange();
   }
 
   /* ----------------------------------------------------------
@@ -537,6 +810,10 @@ class WysiwygEditor {
         btn.classList.toggle('active', document.queryCommandState(cmd));
       } catch (_) { /* ignore */ }
     });
+
+    if (this._linkBtn) {
+      this._linkBtn.classList.toggle('active', !!this._closestInEditor('A'));
+    }
 
     let block = '';
     try { block = document.queryCommandValue('formatBlock').toUpperCase(); } catch (_) {}
@@ -591,11 +868,16 @@ class WysiwygEditor {
      ---------------------------------------------------------- */
 
   _currentTableCell() {
+    return this._closestInEditor('TD', 'TH');
+  }
+
+  /** Nearest ancestor of the selection with one of the given tags, inside the editor */
+  _closestInEditor(...tags) {
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) return null;
     let node = sel.getRangeAt(0).commonAncestorContainer;
     while (node && node !== this._editor) {
-      if (node.nodeType === 1 && (node.tagName === 'TD' || node.tagName === 'TH')) return node;
+      if (node.nodeType === 1 && tags.includes(node.tagName)) return node;
       node = node.parentNode;
     }
     return null;
@@ -658,8 +940,7 @@ class WysiwygEditor {
       this._syncTarget();
       this._updateWordCount();
       this._updateState();
-      this._emit('change', this.getHTML());
-      if (this._opts.onChange) this._opts.onChange(this.getHTML());
+      this._notifyChange();
     }
   }
 
@@ -667,25 +948,34 @@ class WysiwygEditor {
      PUBLIC API
      ---------------------------------------------------------- */
 
-  getHTML()       { return this._editor.innerHTML; }
+  /** In source mode the textarea is the source of truth until toggled back */
+  getHTML()       { return this._isSourceMode ? this._sourceEl.value : this._editor.innerHTML; }
   getText()       { return this._editor.innerText || ''; }
-  focus()         { this._editor.focus(); return this; }
+  focus()         { (this._isSourceMode ? this._sourceEl : this._editor).focus(); return this; }
 
   setHTML(html) {
     this._editor.innerHTML = html || '';
+    if (this._isSourceMode) this._sourceEl.value = html || '';
     this._syncTarget();
     this._updateWordCount();
     return this;
   }
 
   clear() {
-    this._editor.innerHTML = '';
-    this._syncTarget();
-    this._updateWordCount();
+    return this.setHTML('');
+  }
+
+  setDisabled(disabled) {
+    this._disabled = !!disabled;
+    this._editor.contentEditable = this._disabled ? 'false' : 'true';
+    this._sourceEl.readOnly      = this._disabled;
+    this._wrapper.classList.toggle('wysiwyg-disabled', this._disabled);
+    if (this._disabled) this._closeDropdowns();
     return this;
   }
 
   destroy() {
+    document.removeEventListener('mousedown', this._onDocumentMousedown);
     this._target.style.display = '';
     this._wrapper.parentNode.insertBefore(this._target, this._wrapper);
     this._wrapper.remove();

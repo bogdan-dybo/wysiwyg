@@ -35,6 +35,9 @@ export declare class WysiwygEditorCore {
   /** Clears all content */
   clear(): this
 
+  /** Toggles read-only mode and grays out the toolbar */
+  setDisabled(disabled: boolean): this
+
   /**
    * Removes the editor from the DOM and restores the original element.
    * Always call this in onBeforeUnmount / cleanup.
